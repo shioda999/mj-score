@@ -2,6 +2,8 @@
 
 ブラウザ上で動作する麻雀点数計算アプリです。ビルドやAPIキーは不要で、`index.html` を開くだけで利用できます。
 
+公開ページ：https://shioda999.github.io/mj-score/
+
 ![麻雀点数計算アプリの画面](screenshot.png)
 
 ## 使用素材・ライブラリ
