@@ -24,6 +24,81 @@ const state = {
 const $ = (id) => document.getElementById(id);
 const tileById = Object.fromEntries(tileDefs.map((tile) => [tile.id, tile]));
 const order = Object.fromEntries(tileDefs.map((tile, index) => [tile.id, index]));
+const storageKey = "mj-score-inputs-v1";
+const savedInputIds = [
+  "roundWind",
+  "seatWind",
+  "dora",
+  "honba",
+  "tsumoLoss",
+  "riichi",
+  "doubleRiichi",
+  "ippatsu",
+  "qianggang",
+  "lingshang",
+  "haidi",
+  "chiho",
+];
+
+function saveInputs() {
+  const inputs = Object.fromEntries(savedInputIds.map((id) => {
+    const input = $(id);
+    return [id, input.type === "checkbox" ? input.checked : input.value];
+  }));
+  const data = {
+    version: 1,
+    selected: state.selected,
+    melds: state.melds,
+    players: state.players,
+    win: state.win,
+    inputs,
+  };
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(data));
+  }
+  catch {
+    // 保存できない環境でも点数計算はそのまま利用できるようにする。
+  }
+}
+
+function restoreInputs() {
+  let data;
+  try {
+    data = JSON.parse(localStorage.getItem(storageKey));
+  }
+  catch {
+    return;
+  }
+  if (!data || data.version !== 1) return;
+
+  const validTile = (id) => Object.hasOwn(tileById, id);
+  if (Array.isArray(data.selected) && data.selected.every(validTile)) {
+    state.selected = data.selected.slice(0, 14);
+  }
+  if (Array.isArray(data.melds)) {
+    state.melds = data.melds.slice(0, 4).flatMap((meld) => {
+      if (!meld || !["pon", "chi", "minkan", "ankan"].includes(meld.type)) return [];
+      if (!Array.isArray(meld.ids) || !meld.ids.every(validTile)) return [];
+      return [{ type: meld.type, ids: meld.ids, code: meldCode(meld.type, meld.ids) }];
+    });
+  }
+  if ([3, 4].includes(data.players)) state.players = data.players;
+  if (["ron", "tsumo"].includes(data.win)) state.win = data.win;
+
+  if (data.inputs && typeof data.inputs === "object") {
+    savedInputIds.forEach((id) => {
+      if (!(id in data.inputs)) return;
+      const input = $(id);
+      if (input.type === "checkbox") input.checked = Boolean(data.inputs[id]);
+      else input.value = data.inputs[id];
+    });
+  }
+
+  document.querySelectorAll("[data-mode]").forEach((button) => {
+    const value = button.dataset.mode === "players" ? Number(button.dataset.value) : button.dataset.value;
+    button.classList.toggle("active", state[button.dataset.mode] === value);
+  });
+}
 
 function createTileImage(id) {
   const image = document.createElement("img");
@@ -495,6 +570,7 @@ function calculate() {
   $("message").textContent = state.notice;
   $("message").hidden = !state.notice;
   document.querySelector(".sanma-only").style.display = state.players === 3 ? "flex" : "none";
+  saveInputs();
 }
 
 function setupEvents() {
@@ -554,4 +630,5 @@ function setupEvents() {
 
 renderTiles();
 setupEvents();
+restoreInputs();
 calculate();
