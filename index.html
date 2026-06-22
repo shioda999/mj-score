@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>麻雀点数計算</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <h1>麻雀点数計算</h1>
+    </header>
+
+    <section class="toolbar table-settings" aria-label="卓の基本設定">
+      <div class="segmented" role="group" aria-label="人数">
+        <button class="active" data-mode="players" data-value="4" type="button">四麻</button>
+        <button data-mode="players" data-value="3" type="button">三麻</button>
+      </div>
+      <label><span>場風</span>
+        <select id="roundWind">
+          <option value="0">東</option>
+          <option value="1">南</option>
+          <option value="2">西</option>
+          <option value="3">北</option>
+        </select>
+      </label>
+      <label><span>自風</span>
+        <select id="seatWind">
+          <option value="0">東</option>
+          <option value="1" selected>南</option>
+          <option value="2">西</option>
+          <option value="3">北</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="tile-input-panel" aria-label="牌入力">
+      <div class="input-tools">
+        <button class="call-button" data-call="pon" type="button" aria-pressed="false">ポン</button>
+        <button class="call-button" data-call="chi" type="button" aria-pressed="false">チー</button>
+        <button class="call-button" data-call="minkan" type="button" aria-pressed="false">明槓</button>
+        <button class="call-button" data-call="ankan" type="button" aria-pressed="false">暗槓</button>
+        <button id="removeLast" type="button">一手戻す</button>
+      </div>
+      <div class="tile-wall" aria-label="牌選択">
+        <div class="tile-group" id="manzu"></div>
+        <div class="tile-group" id="pinzu"></div>
+        <div class="tile-group" id="souzu"></div>
+        <div class="tile-group" id="honors"></div>
+      </div>
+    </section>
+
+    <section class="hand-area">
+      <div class="hand-header">
+        <div class="hand-status">
+          <span>選択数 <strong id="tileCounter">0 / 14</strong></span>
+          <span>和了牌 <strong id="winningTile">未</strong></span>
+        </div>
+        <div class="hand-actions">
+          <button id="changeWinningTile" class="ghost-button hand-reset" type="button" aria-pressed="false">和了牌変更</button>
+          <button id="sortTiles" class="ghost-button hand-reset" type="button">並べ替え</button>
+          <button id="resetAll" class="ghost-button hand-reset" type="button">リセット</button>
+        </div>
+      </div>
+      <div class="hand-line" id="selectedTiles" aria-label="選択した牌"></div>
+      <div class="meld-line" id="meldTiles" aria-label="副露した牌"></div>
+      <p id="message" class="message"></p>
+      <div class="outcome-settings" aria-label="和了状況">
+        <div class="segmented win-method" role="group" aria-label="和了方法">
+          <button data-mode="win" data-value="ron" type="button">ロン</button>
+          <button class="active" data-mode="win" data-value="tsumo" type="button">ツモ</button>
+        </div>
+        <label class="check-row"><input id="riichi" type="checkbox"> リーチ</label>
+        <label class="check-row"><input id="doubleRiichi" type="checkbox"> ダブリー</label>
+        <label class="check-row"><input id="ippatsu" type="checkbox"> 一発</label>
+        <details class="special-yaku">
+          <summary>特殊役</summary>
+          <div class="special-yaku-options">
+            <label class="check-row"><input id="qianggang" type="checkbox"> 槍槓</label>
+            <label class="check-row"><input id="lingshang" type="checkbox"> 嶺上開花</label>
+            <label class="check-row"><input id="haidi" type="checkbox"> 海底摸月</label>
+            <label class="check-row"><input id="chiho" type="checkbox"> 天和・地和</label>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="score-panel" aria-live="polite">
+      <div class="score-inputs" aria-label="追加点設定">
+        <label><span>ドラ</span>
+          <input id="dora" type="number" min="0" max="20" value="0">
+        </label>
+        <label><span>本場</span>
+          <input id="honba" type="number" min="0" max="20" value="0">
+        </label>
+        <label class="check-row sanma-only"><input id="tsumoLoss" type="checkbox"> 三麻ツモ損あり</label>
+      </div>
+      <div class="score-facts">
+        <span>符数 <strong id="fuDisplay">-</strong></span>
+        <span>翻数 <strong id="hanDisplay">-</strong></span>
+      </div>
+      <div class="point-result">
+        <span class="summary-label">点数</span>
+        <strong id="pointDisplay">牌を選択</strong>
+      </div>
+      <div class="yaku-section">
+        <span class="summary-label">成立役</span>
+        <div id="autoYaku" class="yaku-result"></div>
+      </div>
+    </section>
+    <footer class="app-footer">
+      牌画像素材：
+      <a href="https://mj-king.net/sozai/" target="_blank" rel="noopener noreferrer">麻雀王国「麻雀素材」</a>
+    </footer>
+  </main>
+  <script src="vendor/majiang-core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
