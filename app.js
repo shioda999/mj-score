@@ -386,6 +386,59 @@ function findStandardShapes(counts) {
   return results.slice(0, 16);
 }
 
+function findConcealedShapes(counts) {
+  const ids = tileDefs.map((tile) => tile.id);
+  const meldTarget = 4 - state.melds.length;
+  const results = [];
+
+  function removeMelds(localCounts, melds) {
+    const first = ids.find((id) => localCounts[id] > 0);
+    if (!first) {
+      if (melds.length === meldTarget) results.push(melds.slice());
+      return;
+    }
+    if (melds.length >= meldTarget) return;
+
+    if (localCounts[first] >= 3) {
+      localCounts[first] -= 3;
+      melds.push({ type: "triplet", ids: [first, first, first] });
+      removeMelds(localCounts, melds);
+      melds.pop();
+      localCounts[first] += 3;
+    }
+
+    const tile = tileById[first];
+    if (tile.suit !== "z" && tile.value <= 7) {
+      const second = `${tile.suit}${tile.value + 1}`;
+      const third = `${tile.suit}${tile.value + 2}`;
+      if (localCounts[second] > 0 && localCounts[third] > 0) {
+        localCounts[first] -= 1;
+        localCounts[second] -= 1;
+        localCounts[third] -= 1;
+        melds.push({ type: "sequence", ids: [first, second, third] });
+        removeMelds(localCounts, melds);
+        melds.pop();
+        localCounts[first] += 1;
+        localCounts[second] += 1;
+        localCounts[third] += 1;
+      }
+    }
+  }
+
+  ids.forEach((id) => {
+    if (counts[id] < 2) return;
+    const localCounts = { ...counts };
+    localCounts[id] -= 2;
+    const before = results.length;
+    removeMelds(localCounts, []);
+    for (let i = before; i < results.length; i += 1) {
+      results[i] = { pair: id, melds: results[i] };
+    }
+  });
+
+  return results;
+}
+
 function isChitoitsu(counts) {
   return Object.values(counts).filter((count) => count === 2).length === 7;
 }
@@ -415,6 +468,131 @@ function calculateFallbackFu(counts) {
     return Math.ceil(fu / 10) * 10;
   });
   return Math.max(30, Math.min(...candidates));
+}
+
+function tileKindLabel(id) {
+  const tile = tileById[id];
+  return tile.suit === "z" || tile.value === 1 || tile.value === 9 ? "幺九牌" : "中張牌";
+}
+
+function pairFu(id) {
+  let fu = 0;
+  const labels = [];
+  const windMap = ["z1", "z2", "z3", "z4"];
+  if (["z5", "z6", "z7"].includes(id)) {
+    fu += 2;
+    labels.push("三元牌の雀頭");
+  }
+  if (id === windMap[Number($("roundWind").value)]) {
+    fu += 2;
+    labels.push("場風の雀頭");
+  }
+  if (id === windMap[Number($("seatWind").value)]) {
+    fu += 2;
+    labels.push("自風の雀頭");
+  }
+  return { fu, label: labels.join("・") };
+}
+
+function waitFu(meld, winTile) {
+  if (meld.type !== "sequence") return { fu: 0, label: "" };
+  const values = meld.ids.map((id) => tileById[id].value).sort((a, b) => a - b);
+  const value = tileById[winTile].value;
+  if (value === values[1]) return { fu: 2, label: "嵌張待ち" };
+  if ((values[0] === 1 && value === 3) || (values[0] === 7 && value === 7)) {
+    return { fu: 2, label: "辺張待ち" };
+  }
+  return { fu: 0, label: "" };
+}
+
+function tripletFu(id, concealed, quad = false) {
+  let fu = tileKindLabel(id) === "幺九牌" ? 4 : 2;
+  if (concealed) fu *= 2;
+  if (quad) fu *= 4;
+  return fu;
+}
+
+function fuCandidate(shape, placement) {
+  const items = [{ label: "副底", fu: 20 }];
+  let raw = 20;
+  const pair = pairFu(shape.pair);
+  if (pair.fu) {
+    raw += pair.fu;
+    items.push(pair);
+  }
+
+  if (placement.type === "pair") {
+    raw += 2;
+    items.push({ label: "単騎待ち", fu: 2 });
+  }
+
+  shape.melds.forEach((meld, index) => {
+    if (meld.type === "triplet") {
+      const concealed = state.win === "tsumo" || placement.type !== "meld" || placement.index !== index;
+      const fu = tripletFu(meld.ids[0], concealed);
+      raw += fu;
+      items.push({ label: `${concealed ? "暗刻" : "明刻"}（${tileKindLabel(meld.ids[0])}）`, fu });
+      return;
+    }
+    if (placement.type === "meld" && placement.index === index) {
+      const wait = waitFu(meld, state.selected.at(-1));
+      if (wait.fu) {
+        raw += wait.fu;
+        items.push(wait);
+      }
+    }
+  });
+
+  state.melds.forEach((meld) => {
+    if (meld.type === "chi") return;
+    const concealed = meld.type === "ankan";
+    const quad = meld.type === "minkan" || meld.type === "ankan";
+    const fu = tripletFu(meld.ids[0], concealed, quad);
+    raw += fu;
+    items.push({
+      label: `${concealed ? "暗" : "明"}${quad ? "槓" : "刻"}（${tileKindLabel(meld.ids[0])}）`,
+      fu,
+    });
+  });
+
+  const allSequences = shape.melds.every((meld) => meld.type === "sequence")
+    && state.melds.every((meld) => meld.type === "chi");
+  const pinfuShape = !isOpenHand() && allSequences && raw === 20;
+  if (state.win === "tsumo" && !pinfuShape) {
+    raw += 2;
+    items.push({ label: "ツモ", fu: 2 });
+  }
+  else if (state.win === "ron" && !isOpenHand()) {
+    raw += 10;
+    items.push({ label: "門前ロン", fu: 10 });
+  }
+  else if (state.win === "ron" && raw === 20) {
+    raw = 30;
+    items.push({ label: "副露ロンの最低符", fu: 10 });
+  }
+
+  const total = pinfuShape && state.win === "tsumo" ? 20 : Math.ceil(raw / 10) * 10;
+  if (total > raw) items.push({ label: "切り上げ", fu: total - raw });
+  return { total, items };
+}
+
+function calculateFuBreakdown(result) {
+  if (!result || result.error || result.damanguan) return [];
+  if (result.fu === 25) return [{ label: "七対子", fu: 25 }];
+
+  const concealedCounts = Object.fromEntries(tileDefs.map((tile) => [tile.id, 0]));
+  state.selected.forEach((id) => {
+    concealedCounts[id] += 1;
+  });
+  const winTile = state.selected.at(-1);
+  const candidates = [];
+  findConcealedShapes(concealedCounts).forEach((shape) => {
+    if (shape.pair === winTile) candidates.push(fuCandidate(shape, { type: "pair" }));
+    shape.melds.forEach((meld, index) => {
+      if (meld.ids.includes(winTile)) candidates.push(fuCandidate(shape, { type: "meld", index }));
+    });
+  });
+  return candidates.find((candidate) => candidate.total === result.fu)?.items || [];
 }
 
 function basePoint(fu, han) {
@@ -502,6 +680,31 @@ function renderAutoYaku(result, dora) {
   }
 }
 
+function renderFuBreakdown(result) {
+  const area = $("fuBreakdown");
+  area.innerHTML = "";
+  if (state.selected.length !== concealedTileTarget()) return;
+  if (result?.damanguan) {
+    area.textContent = "役満のため符計算なし";
+    return;
+  }
+  const items = calculateFuBreakdown(result);
+  if (!items.length || !result?.fu) {
+    area.textContent = "符数を算出できません";
+    return;
+  }
+  items.forEach((item) => {
+    const chip = document.createElement("span");
+    chip.className = "fu-chip";
+    chip.textContent = `${item.label} ${item.fu}符`;
+    area.appendChild(chip);
+  });
+  const total = document.createElement("span");
+  total.className = "fu-chip total";
+  total.textContent = `合計 ${result.fu}符`;
+  area.appendChild(total);
+}
+
 function renderSelected(counts) {
   const hand = $("selectedTiles");
   hand.innerHTML = "";
@@ -582,6 +785,7 @@ function calculate() {
 
   renderSelected(counts);
   renderAutoYaku(result, dora);
+  renderFuBreakdown(result);
   $("tileCounter").textContent = `${state.selected.length} / ${target}`;
   $("winningTile").textContent = complete ? tileById[state.selected.at(-1)].label : "未";
   $("fuDisplay").textContent = damanguan ? "-" : fu ? `${fu}符` : "-";

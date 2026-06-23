@@ -508,6 +508,11 @@ input[type="number"] {
   border-top: 1px solid var(--line);
 }
 
+.fu-section {
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--line);
+}
+
 .yaku-result {
   min-height: 34px;
   padding: 3px 0 0;
@@ -533,6 +538,32 @@ input[type="number"] {
   color: var(--ink);
   padding: 5px 9px;
   font-weight: 700;
+}
+
+.fu-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  padding-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.fu-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 7px;
+  background: #f1f5f2;
+  color: var(--ink);
+  padding: 4px 8px;
+}
+
+.fu-chip.total {
+  background: #e3f1e8;
+  color: var(--accent-dark);
+  font-weight: 800;
 }
 
 @media (max-width: 620px) {
