@@ -358,10 +358,14 @@ input[type="number"] {
   font-size: 13px;
 }
 
-.input-tools .call-button {
+.input-tools .call-button,
+.input-tools #removeLast {
   min-height: 36px;
   padding: 7px 12px;
   border: 2px solid #83aa97;
+}
+
+.input-tools .call-button {
   background: #edf6f0;
   color: var(--accent-dark);
   font-weight: 700;
@@ -589,7 +593,8 @@ input[type="number"] {
     font-size: 11px;
   }
 
-  .input-tools .call-button {
+  .input-tools .call-button,
+  .input-tools #removeLast {
     min-height: 36px;
     border-width: 2px;
     font-size: 12px;
