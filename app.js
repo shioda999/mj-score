@@ -422,6 +422,9 @@ function basePoint(fu, han) {
   if (han >= 11) return { base: 6000, label: "三倍満" };
   if (han >= 8) return { base: 4000, label: "倍満" };
   if (han >= 6) return { base: 3000, label: "跳満" };
+  if ((fu === 30 && han === 4) || (fu === 60 && han === 3)) {
+    return { base: 2000, label: "満貫" };
+  }
   const raw = fu * (2 ** (han + 2));
   if (han >= 5 || raw >= 2000) return { base: 2000, label: "満貫" };
   return { base: raw, label: "" };

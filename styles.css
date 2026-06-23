@@ -600,6 +600,10 @@ input[type="number"] {
     font-size: 12px;
   }
 
+  .input-tools #removeLast {
+    font-size: 11px;
+  }
+
   .tile-group {
     grid-template-columns: repeat(9, minmax(0, 1fr));
     gap: 1px;
