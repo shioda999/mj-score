@@ -70,8 +70,8 @@
       <p id="message" class="message"></p>
       <div class="outcome-settings" aria-label="和了状況">
         <div class="segmented win-method" role="group" aria-label="和了方法">
-          <button data-mode="win" data-value="ron" type="button">ロン</button>
-          <button class="active" data-mode="win" data-value="tsumo" type="button">ツモ</button>
+          <button class="active" data-mode="win" data-value="ron" type="button">ロン</button>
+          <button data-mode="win" data-value="tsumo" type="button">ツモ</button>
         </div>
         <label class="check-row"><input id="riichi" type="checkbox"> リーチ</label>
         <label class="check-row"><input id="doubleRiichi" type="checkbox"> ダブリー</label>
@@ -90,13 +90,25 @@
 
     <section class="score-panel" aria-live="polite">
       <div class="score-inputs" aria-label="追加点設定">
-        <label><span>ドラ</span>
-          <input id="dora" type="number" min="0" max="20" value="0">
-        </label>
-        <label><span>本場</span>
-          <input id="honba" type="number" min="0" max="20" value="0">
-        </label>
-        <label class="check-row sanma-only"><input id="tsumoLoss" type="checkbox"> 三麻ツモ損あり</label>
+        <div class="counter-setting">
+          <span>ドラ</span>
+          <div class="number-stepper" role="group" aria-label="ドラ数">
+            <button data-counter="dora" data-step="-1" type="button" aria-label="ドラを1減らす">−</button>
+            <output id="doraValue" for="dora">0</output>
+            <button data-counter="dora" data-step="1" type="button" aria-label="ドラを1増やす">＋</button>
+            <input id="dora" type="hidden" value="0">
+          </div>
+        </div>
+        <div class="counter-setting">
+          <span>本場</span>
+          <div class="number-stepper" role="group" aria-label="本場数">
+            <button data-counter="honba" data-step="-1" type="button" aria-label="本場を1減らす">−</button>
+            <output id="honbaValue" for="honba">0</output>
+            <button data-counter="honba" data-step="1" type="button" aria-label="本場を1増やす">＋</button>
+            <input id="honba" type="hidden" value="0">
+          </div>
+        </div>
+        <label class="check-row sanma-only"><input id="tsumoLoss" type="checkbox" checked> 三麻ツモ損あり</label>
       </div>
       <div class="score-facts">
         <span>符数 <strong id="fuDisplay">-</strong></span>

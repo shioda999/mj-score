@@ -18,7 +18,7 @@ const state = {
   changeWinningTileMode: false,
   notice: "",
   players: 4,
-  win: "tsumo",
+  win: "ron",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -106,6 +106,22 @@ function createTileImage(id) {
   image.alt = tileById[id].label;
   image.draggable = false;
   return image;
+}
+
+function syncCounterDisplays() {
+  ["dora", "honba"].forEach((id) => {
+    const input = $(id);
+    const value = Math.min(20, Math.max(0, Number(input.value) || 0));
+    input.value = value;
+    $(`${id}Value`).value = value;
+    document.querySelector(`[data-counter="${id}"][data-step="-1"]`).disabled = value === 0;
+    document.querySelector(`[data-counter="${id}"][data-step="1"]`).disabled = value === 20;
+  });
+}
+
+function changeCounter(id, step) {
+  $(id).value = Math.min(20, Math.max(0, Number($(id).value) + step));
+  calculate();
 }
 
 function renderTiles() {
@@ -549,6 +565,7 @@ function renderSelected(counts) {
 }
 
 function calculate() {
+  syncCounterDisplays();
   normalizeManualYaku();
   const counts = countsFromSelected();
   const target = concealedTileTarget();
@@ -583,9 +600,12 @@ function setupEvents() {
       calculate();
     });
   });
-  ["roundWind", "seatWind", "dora", "honba", "tsumoLoss", "riichi", "doubleRiichi", "ippatsu", "qianggang", "lingshang", "haidi", "chiho"].forEach((id) => {
+  ["roundWind", "seatWind", "tsumoLoss", "riichi", "doubleRiichi", "ippatsu", "qianggang", "lingshang", "haidi", "chiho"].forEach((id) => {
     $(id).addEventListener("change", calculate);
     $(id).addEventListener("input", calculate);
+  });
+  document.querySelectorAll("[data-counter]").forEach((button) => {
+    button.addEventListener("click", () => changeCounter(button.dataset.counter, Number(button.dataset.step)));
   });
   $("removeLast").addEventListener("click", () => {
     state.selected.pop();
@@ -615,12 +635,19 @@ function setupEvents() {
     state.callMode = null;
     state.changeWinningTileMode = false;
     state.notice = "";
+    state.players = 4;
+    state.win = "ron";
     document.querySelectorAll("input[type='checkbox']").forEach((input) => {
       input.checked = false;
       input.disabled = false;
     });
+    $("tsumoLoss").checked = true;
     $("dora").value = 0;
     $("honba").value = 0;
+    document.querySelectorAll("[data-mode]").forEach((button) => {
+      const value = button.dataset.mode === "players" ? Number(button.dataset.value) : button.dataset.value;
+      button.classList.toggle("active", state[button.dataset.mode] === value);
+    });
     calculate();
   });
   document.querySelectorAll(".call-button").forEach((button) => {
